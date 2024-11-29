@@ -1,0 +1,9 @@
+[controlplanes]
+172.16.15.30:22 ansible_user=cybercoder ansible_password=1qaz!QAZ ansible_become_password=1qaz!QAZ#
+[computes]
+172.16.15.40:22 ansible_user=cybercoder ansible_password=1qaz!QAZ ansible_become_password=1qaz!QAZ#
+[storages]
+172.16.15.50:22 ansible_user=cybercoder ansible_password=1qaz!QAZ ansible_become_password=1qaz!QAZ#
+
+[controlplane01]
+172.16.15.30:22 ansible_user=cybercoder ansible_password=1qaz!QAZ ansible_become_password=1qaz!QAZ#

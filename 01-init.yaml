@@ -1,0 +1,121 @@
+- name: My pleasure environment
+  hosts: all
+  become: true # This is only for tasks like package installation
+  vars:
+    target_user: "cybercoder"
+  tasks:
+    - name: Remove existing Oh My Zsh for the target user
+      ansible.builtin.file:
+        path: "/home/{{ target_user }}/.oh-my-zsh"
+        state: absent
+      become: true
+
+    - name: Install required packages
+      ansible.builtin.package:
+        name:
+          - git
+          - zsh
+          - figlet
+          - lolcat
+          - neofetch
+        state: present
+      become: true # Package installation needs root privileges
+
+    - name: Install Oh My Zsh (fresh install) for the target user
+      shell:
+        cmd: curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh | bash
+        chdir: "/home/{{ target_user }}"
+        creates: "/home/{{ target_user }}/.oh-my-zsh"
+      become: true
+      become_user: "{{ target_user }}"
+      environment:
+        HOME: "/home/{{ target_user }}"
+
+    - name: Change default shell to zsh for the user
+      ansible.builtin.user:
+        name: "{{ target_user }}"
+        shell: /bin/zsh
+      become: true
+
+    - name: Set Zsh theme
+      ansible.builtin.lineinfile:
+        path: "/home/{{ target_user }}/.zshrc"
+        regexp: "^ZSH_THEME="
+        line: 'ZSH_THEME="fino-time"'
+        create: yes
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: "0644"
+      become: false # No need for root here
+
+    - name: Install zsh-autosuggestions plugin
+      ansible.builtin.git:
+        repo: https://github.com/zsh-users/zsh-autosuggestions
+        dest: "/home/{{ target_user }}/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
+        update: no
+        force: no
+      become: true
+      become_user: "{{ target_user }}"
+
+    - name: Add zsh-autosuggestions to plugins in .zshrc
+      ansible.builtin.lineinfile:
+        path: "/home/{{ target_user }}/.zshrc"
+        regexp: '^plugins=\(.*\)'
+        line: "plugins=(git zsh-autosuggestions)"
+        create: yes
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: "0644"
+      become: false # No need for root here
+
+    - name: Ensure .zshrc has correct ownership
+      ansible.builtin.file:
+        path: "/home/{{ target_user }}/.zshrc"
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: "0644"
+      become: false # No need for root here
+
+    - name: Append neofetch to .zshrc if not exists
+      ansible.builtin.lineinfile:
+        path: "/home/{{ target_user }}/.zshrc"
+        line: neofetch
+        create: yes
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: "0644"
+        insertafter: EOF
+      become: false
+
+    - name: Append 'figlet hi' to .zshrc if not exists
+      ansible.builtin.lineinfile:
+        path: "/home/{{ target_user }}/.zshrc"
+        line: figlet ik8s-$HOST | lolcat
+        create: yes
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: "0644"
+        insertafter: EOF
+      become: false
+
+    - name: Alias kubectl with k
+      ansible.builtin.lineinfile:
+        path: "/home/{{ target_user }}/.zshrc"
+        line: "alias k=kubectl"
+        create: yes
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: "0644"
+        insertafter: EOF
+      become: false
+
+    - name: Append 'source <(kubectl completion zsh)' to .zshrc if not exists
+      ansible.builtin.lineinfile:
+        path: "/home/{{ target_user }}/.zshrc"
+        line: "source <(kubectl completion zsh)"
+        create: yes
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: "0644"
+        insertafter: EOF
+      become: false

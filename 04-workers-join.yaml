@@ -1,0 +1,30 @@
+- name: Join to the K3s cluster as agent
+  hosts: computes,storages
+  become: true
+  vars:
+    k3s_install_url: "https://get.k3s.io"
+    controlplane_ip: "172.16.15.30"
+
+  tasks:
+    - name: Fetch K3S token from controlplane01
+      slurp:
+        src: "/var/lib/rancher/k3s/server/token"
+      register: k3s_token_slurp
+      delegate_to: controlplane01
+      become: true
+    - name: Install K3s agent and join the cluster
+      shell: |
+        curl -sfL {{ k3s_install_url }} | K3S_TOKEN={{ k3s_token_slurp.content }} sh -s - agent --server https://{{ controlplane_ip }}:6443
+      args:
+        creates: "/usr/local/bin/k3s"
+      become: true
+      become_user: root
+
+    - name: Verify K3s agent installation
+      command: /usr/local/bin/k3s --version
+      register: k3s_version
+      changed_when: false
+
+    - name: Show K3s agent version
+      debug:
+        msg: "K3s agent version installed: {{ k3s_version.stdout }}"
